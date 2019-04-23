@@ -144,8 +144,8 @@ public :
         CalcBeta();
         CalcYaw();
         CalcBetafr();
-        CalcF();
         CalcCp();
+        CalcF();
         CalcGy();
         CalcV();
         CalcXY();
