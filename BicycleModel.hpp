@@ -3,6 +3,10 @@
 #include <math.h>
 
 class BicycleModel {
+    const double DEG2RAD = M_PI / 180.0;
+    const double RAD2DEG = 180.0 / M_PI;
+    const double KG2G = 9.80665;
+    const double G2KG = 1.0 / 9.80665;
 public :
     double V = 100;
     double delta = 0.08726646259;
@@ -29,6 +33,10 @@ public :
     double moment = 0.0;
     double Ff = 0.0;
     double Fr = 0.0;
+    double Ff_dot = 0.0;
+    double Fr_dot = 0.0;
+    double kf = 10000 * 9.8;
+    double kr = 10000 * 9.8;
     double Cpr = 0.0;
     double Cpf = 0.0;
     double Gy = 0.0;
@@ -114,14 +122,18 @@ public :
         betar = -beta + (lr*yaw_rate / V);
         return 0;
     }
-    int CalcF() {
-        Ff = Df * sin(Cf*atan(Bf*betaf * 180.0 / M_PI)) * 9.8 * 2.0;
-        Fr = Dr * sin(Cr*atan(Br*betar * 180.0 / M_PI)) * 9.8 * 2.0;
+    int CalcCp() {
+        Cpf = (Bf*Cf*Df*cos(Cf*atan(Bf*betaf*180.0 / M_PI)) / (atan(Bf*betaf*180.0 / M_PI)*atan(Bf*betaf*180.0 / M_PI) + 1)) * 9.8 * 2;
+        Cpr = (Br*Cr*Dr*cos(Cr*atan(Br*betar*180.0 / M_PI)) / (atan(Br*betar*180.0 / M_PI)*atan(Br*betar*180.0 / M_PI) + 1)) * 9.8 * 2;
         return 0;
     }
-    int CalcCp() {
-        Cpf = (Bf*Cf*Df*cos(Cf*atan(Bf*betaf*180.0 / M_PI)) / (atan(Bf*betaf*180.0 / M_PI)*atan(Bf*betaf*180.0 / M_PI) + 1)) * 2;
-        Cpr = (Br*Cr*Dr*cos(Cr*atan(Br*betar*180.0 / M_PI)) / (atan(Br*betar*180.0 / M_PI)*atan(Br*betar*180.0 / M_PI) + 1)) * 2;
+    int CalcF() {
+        //Ff = Df * sin(Cf*atan(Bf*betaf * 180.0 / M_PI)) * 9.8 * 2.0;
+        //Fr = Dr * sin(Cr*atan(Br*betar * 180.0 / M_PI)) * 9.8 * 2.0;
+        Ff_dot = V * kf*(Cpf*betaf * RAD2DEG - Ff) / Cpf;
+        Fr_dot = V * kr*(Cpr*betar * RAD2DEG - Fr) / Cpr;
+        Ff += Ff_dot * step;
+        Fr += Fr_dot * step;
         return 0;
     }
     int CalcGy() {
