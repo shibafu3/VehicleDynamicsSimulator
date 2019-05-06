@@ -14,27 +14,27 @@ public :
     double lf = 1.0453;
     double lr = 1.7546;
     double I = 3024;
-    double Bf = 0.2;
-    double Cf = 1.5;
-    double Df = 376.0;
-    double Br = 0.31;
-    double Cr = 1.28;
-    double Dr = 252.0;
+    double bf = 0.2;
+    double cf = 1.5;
+    double df = 376.0;
+    double br = 0.31;
+    double cr = 1.28;
+    double dr = 252.0;
 
     double Wf = 0.0;
     double Wr = 0.0;
-    double beta = 0.0;
-    double beta_dot = 0.0;
-    double betaf = 0.0;
-    double betar = 0.0;
+    double B = 0.0;
+    double dB = 0.0;
+    double Bf = 0.0;
+    double Br = 0.0;
     double yaw = 0.0;
-    double yaw_rate = 0.0;
-    double yaw_rate_rate = 0.0;
+    double dyaw = 0.0;
+    double ddyaw = 0.0;
     double moment = 0.0;
     double Ff = 0.0;
     double Fr = 0.0;
-    double Ff_dot = 0.0;
-    double Fr_dot = 0.0;
+    double dFf = 0.0;
+    double dFr = 0.0;
     double kf = 10000 * 9.8;
     double kr = 10000 * 9.8;
     double Cpr = 0.0;
@@ -86,12 +86,12 @@ public :
         return 0;
     }
     int SetTireData(double Bf_in, double Cf_in, double Df_in, double Br_in, double Cr_in, double Dr_in) {
-        Bf = Bf_in;
-        Cf = Cf_in;
-        Df = Df_in;
-        Br = Br_in;
-        Cr = Cr_in;
-        Dr = Dr_in;
+        bf = Bf_in;
+        cf = Cf_in;
+        df = Df_in;
+        br = Br_in;
+        cr = Cr_in;
+        dr = Dr_in;
         return 0;
     }
     int SetStep(double step_in) {
@@ -106,43 +106,43 @@ public :
         return 0;
     }
     int CalcBeta() {
-        beta_dot = (Ff + Fr) / (m*V) - yaw_rate;
-        beta += beta_dot * step;
+        dB = (Ff + Fr) / (m*V) - dyaw;
+        B += dB * step;
         return 0;
     }
     int CalcYaw() {
-        yaw_rate_rate = (lf*Ff - lr*Fr) / I;
-        yaw_rate += yaw_rate_rate * step;
-        yaw += yaw_rate * step;
-        moment = I * yaw_rate_rate;
+        ddyaw = (lf*Ff - lr*Fr) / I;
+        dyaw += ddyaw * step;
+        yaw += dyaw * step;
+        moment = I * ddyaw;
         return 0;
     }
     int CalcBetafr() {
-        betaf = delta - beta - (lf*yaw_rate / V);
-        betar = -beta + (lr*yaw_rate / V);
+        Bf = delta - B - (lf*dyaw / V);
+        Br = -B + (lr*dyaw / V);
         return 0;
     }
     int CalcCp() {
-        Cpf = (Bf*Cf*Df*cos(Cf*atan(Bf*betaf*180.0 / M_PI)) / (atan(Bf*betaf*180.0 / M_PI)*atan(Bf*betaf*180.0 / M_PI) + 1)) * 9.8 * 2;
-        Cpr = (Br*Cr*Dr*cos(Cr*atan(Br*betar*180.0 / M_PI)) / (atan(Br*betar*180.0 / M_PI)*atan(Br*betar*180.0 / M_PI) + 1)) * 9.8 * 2;
+        Cpf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * 9.8 * 2;
+        Cpr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * 9.8 * 2;
         return 0;
     }
     int CalcF() {
-        //Ff = Df * sin(Cf*atan(Bf*betaf * 180.0 / M_PI)) * 9.8 * 2.0;
-        //Fr = Dr * sin(Cr*atan(Br*betar * 180.0 / M_PI)) * 9.8 * 2.0;
-        Ff_dot = V * kf*(Cpf*betaf * RAD2DEG - Ff) / Cpf;
-        Fr_dot = V * kr*(Cpr*betar * RAD2DEG - Fr) / Cpr;
-        Ff += Ff_dot * step;
-        Fr += Fr_dot * step;
+        //Ff = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * 9.8 * 2.0;
+        //Fr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * 9.8 * 2.0;
+        dFf = V * kf*(Cpf*Bf * RAD2DEG - Ff) / Cpf;
+        dFr = V * kr*(Cpr*Br * RAD2DEG - Fr) / Cpr;
+        Ff += dFf * step;
+        Fr += dFr * step;
         return 0;
     }
     int CalcGy() {
-        Gy = V * (beta_dot + yaw_rate) / 9.8;
+        Gy = V * (dB + dyaw) / 9.8;
         return 0;
     }
     int CalcV() {
-        Vx = V * cos(beta_dot);
-        Vy = V * sin(beta_dot);
+        Vx = V * cos(dB);
+        Vy = V * sin(dB);
         return 0;
     }
     int CalcXY() {
