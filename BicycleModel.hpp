@@ -163,4 +163,10 @@ public :
         CalcXY();
         return 0;
     }
+    int Step(int step_count) {
+        for (int i = 0; i < step_count; ++i) {
+            Step();
+        }
+        return 0;
+    }
 };
