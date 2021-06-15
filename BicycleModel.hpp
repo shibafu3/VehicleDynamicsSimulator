@@ -19,6 +19,76 @@ class BicycleModel {
     const double g = 9.80665;
     const double KGF2N = g;
     const double N2KGF = 1.0 / g;
+
+    double a11() {
+        return -2*(Kf + Kr) / (m*V);
+    }
+    double a12() {
+        return -1 - 2/(m*V*V) * (lf*Kf - lr*Kr);
+    }
+    double a21() {
+        return -2 * (lf*Kf - lr*Kr) / I;
+    }
+    double a22() {
+        return -2 * (lf*lf*Kf + lr*lr*Kr) / (I*V);
+    }
+    double b1() {
+        return 2*Kf / (m*V);
+    }
+    double b2() {
+        return 2*lf*Kf/I;
+    }
+
+    int CalcWeight() {
+        Wf = (m*lf) / (lf+lr);
+        Wr = (m*lr) / (lf+lr);
+        return 0;
+    }
+    int CalcBeta() {
+        dB = a11()*B + a12()*dyaw + b1()*delta;
+        B += dB * dt;
+        return 0;
+    }
+    int CalcYaw() {
+        ddyaw = a21()*B + a22()*dyaw + b2()*delta;
+        dyaw += ddyaw * dt;
+        yaw += dyaw * dt;
+        return 0;
+    }
+    int CalcBetafr() {
+        Bf = B + lf*dyaw/V - delta;
+        Br = B - lr*dyaw/V;
+        return 0;
+    }
+    int CalcCp() {
+        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * g * 2;
+        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * g * 2;
+        return 0;
+    }
+    int CalcF() {
+        //Yf = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * g * 2.0;
+        //Yr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * g * 2.0;
+        dYf = V * kf*(Kf*Bf * RAD2DEG - Yf) / Kf;
+        dYr = V * kr*(Kr*Br * RAD2DEG - Yr) / Kr;
+        Yf += dYf * dt;
+        Yr += dYr * dt;
+        return 0;
+    }
+    int CalcGy() {
+        Gy = V * (dB + dyaw) / g;
+        return 0;
+    }
+    int CalcV() {
+        Vx = V * cos(B);
+        Vy = V * sin(B);
+        return 0;
+    }
+    int CalcXY() {
+        x += (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * dt;
+        y += (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * dt;
+        return 0;
+    }
+
 public :
     double V = 140.0/3.6;    // Velocity [m/s]
     double delta = 0.04;     // Input_Tire_Angle [rad]
@@ -111,65 +181,10 @@ public :
         return 0;
     }
 
-
-    int CalcWeight() {
-        Wf = (m*lf) / (lf+lr);
-        Wr = (m*lr) / (lf+lr);
-        return 0;
-    }
-    int CalcBeta() {
-        dB = (Yf + Yr) / (m*V) - dyaw;
-        B += dB * dt;
-        return 0;
-    }
-    int CalcYaw() {
-        ddyaw = (lf*Yf - lr*Yr) / I;
-        dyaw += ddyaw * dt;
-        yaw += dyaw * dt;
-        moment = I * ddyaw;
-        return 0;
-    }
-    int CalcBetafr() {
-        Bf = delta - B - (lf*dyaw / V);
-        Br = -B + (lr*dyaw / V);
-        return 0;
-    }
-    int CalcCp() {
-        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * g * 2;
-        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * g * 2;
-        return 0;
-    }
-    int CalcF() {
-        //Yf = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * g * 2.0;
-        //Yr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * g * 2.0;
-        dYf = V * kf*(Kf*Bf * RAD2DEG - Yf) / Kf;
-        dYr = V * kr*(Kr*Br * RAD2DEG - Yr) / Kr;
-        Yf += dYf * dt;
-        Yr += dYr * dt;
-        return 0;
-    }
-    int CalcGy() {
-        Gy = V * (dB + dyaw) / g;
-        return 0;
-    }
-    int CalcV() {
-        Vx = V * cos(B);
-        Vy = V * sin(B);
-        return 0;
-    }
-    int CalcXY() {
-        x += (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * dt;
-        y += (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * dt;
-        return 0;
-    }
-
     int Step() {
-        CalcWeight();
         CalcBeta();
         CalcYaw();
         CalcBetafr();
-        CalcCp();
-        CalcF();
         CalcGy();
         CalcV();
         CalcXY();
