@@ -141,8 +141,8 @@ public :
         return 0;
     }
     int CalcV() {
-        Vx = V * cos(dB);
-        Vy = V * sin(dB);
+        Vx = V * cos(B);
+        Vy = V * sin(B);
         return 0;
     }
     int CalcXY() {
