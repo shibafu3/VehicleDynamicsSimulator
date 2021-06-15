@@ -3,49 +3,61 @@
 #include <math.h>
 
 class BicycleModel {
+
+    //                      Z(UP)
+    //                      ^
+    //             X  ^     |
+    //      (FORWARD)  \    |
+    //                  \   |
+    //                   \  |
+    //                    \ |
+    //  Y(LEFT)            \|
+    //   <------------------
+
     const double DEG2RAD = M_PI / 180.0;
     const double RAD2DEG = 180.0 / M_PI;
-    const double KG2G = 9.80665;
-    const double G2KG = 1.0 / 9.80665;
+    const double g = 9.80665;
+    const double KGF2N = g;
+    const double N2KGF = 1.0 / g;
 public :
-    double V = 100;
-    double delta = 0.08726646259;
-    double m = 1500;
-    double lf = 1.0453;
-    double lr = 1.7546;
-    double I = 3024;
-    double bf = 0.2;
-    double cf = 1.5;
-    double df = 376.0;
-    double br = 0.31;
-    double cr = 1.28;
-    double dr = 252.0;
+    double V = 140.0/3.6;    // Velocity [m/s]
+    double delta = 0.04;     // Input_Tire_Angle [rad]
+    double m = 1500;         // Vehicle_Mass [kg]
+    double lf = 1.1;         // [m]
+    double lr = 1.6;         // [m]
+    double I = 2500;         // Inertia [kg*m^2]
+    double bf = 0.2;         // Magic_Fomula_front_B []
+    double cf = 1.5;         // Magic_Fomula_front_C []
+    double df = 376.0;       // Magic_Fomula_front_D []
+    double br = 0.31;        // Magic_Fomula_rear_B []
+    double cr = 1.28;        // Magic_Fomula_rear_C []
+    double dr = 252.0;       // Magic_Fomula_rear_D []
 
-    double Wf = 0.0;
-    double Wr = 0.0;
-    double B = 0.0;
-    double dB = 0.0;
-    double Bf = 0.0;
-    double Br = 0.0;
-    double yaw = 0.0;
-    double dyaw = 0.0;
-    double ddyaw = 0.0;
-    double moment = 0.0;
-    double Ff = 0.0;
-    double Fr = 0.0;
-    double dFf = 0.0;
-    double dFr = 0.0;
-    double kf = 10000 * 9.8;
-    double kr = 10000 * 9.8;
-    double Cpr = 0.0;
-    double Cpf = 0.0;
-    double Gy = 0.0;
-    double Vx = 0.0;
-    double Vy = 0.0;
-    double x = 0.0;
-    double y = 0.0;
+    double Wf = 0.0;         // Front_tire_mass [kg]
+    double Wr = 0.0;         // Front_tire_mass [kg]
+    double B = 0.0;          // Vehicle_Slip_angle [rad]
+    double dB = 0.0;         // Vehicle_Slip_angle_rate [rad/s]
+    double Bf = 0.0;         // Front_Tire_Slip_angle [rad/s]
+    double Br = 0.0;         // Rear_Tire_Slip_angle [rad/s]
+    double yaw = 0.0;        // Yaw_Angle [rad]
+    double dyaw = 0.0;       // Yaw_Rate [rad/s]
+    double ddyaw = 0.0;      // Yaw_Rate_Rate [rad/s^2]
+    double moment = 0.0;     // Moment [N*m]
+    double Yf = 0.0;         // Cornaring_Force_front [N]
+    double Yr = 0.0;         // Cornaring_Force_rear [N]
+    double dYf = 0.0;        // Cornaring_Force_Rate_front [N]
+    double dYr = 0.0;        // Cornaring_Force_Rate_rear [N]
+    double kf = 10000 * 9.8; // Cornaring_Power_front? [N/rad]
+    double kr = 10000 * 9.8; // Cornaring_Power_rear? [N/rad]
+    double Kf = 55000.0;     // Cornaring_Power_front [N/rad]
+    double Kr = 60000.0;     // Cornaring_Power_rear [N/rad]
+    double Gy = 0.0;         // Side_G [G]
+    double Vx = 0.0;         // Velocity_X [m/s]
+    double Vy = 0.0;         // Velocity_Y [m/s]
+    double x = 0.0;          // Position_X [m]
+    double y = 0.0;          // Position_Y [m]
 
-    double step = 0.001;
+    double dt = 0.01;
 
     BicycleModel(double handle_angle_rad,
                  double velocity_mps,
@@ -59,11 +71,11 @@ public :
                  double Br_in,
                  double Cr_in,
                  double Dr_in,
-                 double step_in) {
+                 double dt_in) {
         SetControllData(handle_angle_rad, velocity_mps);
         SetVehicleData(mass_kg, length_front_m, length_rear_m, inertia_yaw_moment);
         SetTireData(Bf_in, Cf_in, Df_in, Br_in, Cr_in, Dr_in);
-        SetStep(step_in);
+        SetStep(dt_in);
     }
     int SetSteer(double handle_angle_rad) {
         delta = handle_angle_rad;
@@ -94,8 +106,8 @@ public :
         dr = Dr_in;
         return 0;
     }
-    int SetStep(double step_in) {
-        step = step_in;
+    int SetStep(double dt_in) {
+        dt = dt_in;
         return 0;
     }
 
@@ -106,14 +118,14 @@ public :
         return 0;
     }
     int CalcBeta() {
-        dB = (Ff + Fr) / (m*V) - dyaw;
-        B += dB * step;
+        dB = (Yf + Yr) / (m*V) - dyaw;
+        B += dB * dt;
         return 0;
     }
     int CalcYaw() {
-        ddyaw = (lf*Ff - lr*Fr) / I;
-        dyaw += ddyaw * step;
-        yaw += dyaw * step;
+        ddyaw = (lf*Yf - lr*Yr) / I;
+        dyaw += ddyaw * dt;
+        yaw += dyaw * dt;
         moment = I * ddyaw;
         return 0;
     }
@@ -123,21 +135,21 @@ public :
         return 0;
     }
     int CalcCp() {
-        Cpf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * 9.8 * 2;
-        Cpr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * 9.8 * 2;
+        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * g * 2;
+        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * g * 2;
         return 0;
     }
     int CalcF() {
-        //Ff = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * 9.8 * 2.0;
-        //Fr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * 9.8 * 2.0;
-        dFf = V * kf*(Cpf*Bf * RAD2DEG - Ff) / Cpf;
-        dFr = V * kr*(Cpr*Br * RAD2DEG - Fr) / Cpr;
-        Ff += dFf * step;
-        Fr += dFr * step;
+        //Yf = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * g * 2.0;
+        //Yr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * g * 2.0;
+        dYf = V * kf*(Kf*Bf * RAD2DEG - Yf) / Kf;
+        dYr = V * kr*(Kr*Br * RAD2DEG - Yr) / Kr;
+        Yf += dYf * dt;
+        Yr += dYr * dt;
         return 0;
     }
     int CalcGy() {
-        Gy = V * (dB + dyaw) / 9.8;
+        Gy = V * (dB + dyaw) / g;
         return 0;
     }
     int CalcV() {
@@ -146,8 +158,8 @@ public :
         return 0;
     }
     int CalcXY() {
-        x += (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * step;
-        y += (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * step;
+        x += (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * dt;
+        y += (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * dt;
         return 0;
     }
 
