@@ -29,7 +29,7 @@ int main() {
     vector<double> Bf;
     vector<double> step;
 
-    double steer = 3.0 * M_PI / 180.0;
+    double steer = 10.0 * M_PI / 180.0;
     double steerd = steer * 0.002;
     car1.Step();
     car1.SetSteer(steer);
@@ -48,7 +48,7 @@ int main() {
         //cout << "yawrate " << car1.yaw_rate * 180 / M_PI << endl;
         //cout << "x " << car1.x * 180 / M_PI << endl;
         //cout << "y " << car1.y * 180 / M_PI << endl;
-        ofs << car1.x << "," << car1.y << "," << steer << "," << car1.Bf << "," << car1.Br << "," << car1.dYf << "," << car1.Yf << endl;
+        ofs << car1.x << "," << car1.y << "," << max(0.0, steer) << "," << car1.Bf << "," << car1.Br << "," << car1.dYf << "," << car1.Yf << endl;
         x.push_back(car1.x);
         y.push_back(car1.y);
         step.push_back(i);
