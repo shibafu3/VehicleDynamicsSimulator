@@ -14,6 +14,7 @@ class BicycleModel {
     //  Y(LEFT)            \|
     //   <------------------
 
+protected :
     const double DEG2RAD = M_PI / 180.0;
     const double RAD2DEG = 180.0 / M_PI;
     const double g = 9.80665;
@@ -60,18 +61,9 @@ class BicycleModel {
         Br = B - lr*dyaw/V;
         return 0;
     }
-    int CalcCp() {
+    virtual int CalcK() {
         Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * g * 2;
         Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * g * 2;
-        return 0;
-    }
-    int CalcF() {
-        //Yf = df * sin(cf*atan(bf*Bf * 180.0 / M_PI)) * g * 2.0;
-        //Yr = dr * sin(cr*atan(br*Br * 180.0 / M_PI)) * g * 2.0;
-        dYf = V * kf*(Kf*Bf * RAD2DEG - Yf) / Kf;
-        dYr = V * kr*(Kr*Br * RAD2DEG - Yr) / Kr;
-        Yf += dYf * dt;
-        Yr += dYr * dt;
         return 0;
     }
     int CalcGy() {
@@ -90,8 +82,11 @@ class BicycleModel {
     }
 
 public :
-    double V = 140.0/3.6;    // Velocity [m/s]
+    // Control  inputs
     double delta = 0.04;     // Input_Tire_Angle [rad]
+    double V = 140.0/3.6;    // Velocity [m/s]
+
+    // Vehicle specifications
     double m = 1500;         // Vehicle_Mass [kg]
     double lf = 1.1;         // [m]
     double lr = 1.6;         // [m]
@@ -102,9 +97,12 @@ public :
     double br = 0.31;        // Magic_Fomula_rear_B []
     double cr = 1.28;        // Magic_Fomula_rear_C []
     double dr = 252.0;       // Magic_Fomula_rear_D []
-
     double Wf = 0.0;         // Front_tire_mass [kg]
     double Wr = 0.0;         // Front_tire_mass [kg]
+    double Kf = 55000.0;     // Cornaring_Power_front [N/rad]
+    double Kr = 60000.0;     // Cornaring_Power_rear [N/rad]
+
+    //Physical phenomenon
     double B = 0.0;          // Vehicle_Slip_angle [rad]
     double dB = 0.0;         // Vehicle_Slip_angle_rate [rad/s]
     double Bf = 0.0;         // Front_Tire_Slip_angle [rad/s]
@@ -117,10 +115,6 @@ public :
     double Yr = 0.0;         // Cornaring_Force_rear [N]
     double dYf = 0.0;        // Cornaring_Force_Rate_front [N]
     double dYr = 0.0;        // Cornaring_Force_Rate_rear [N]
-    double kf = 10000 * 9.8; // Cornaring_Power_front? [N/rad]
-    double kr = 10000 * 9.8; // Cornaring_Power_rear? [N/rad]
-    double Kf = 55000.0;     // Cornaring_Power_front [N/rad]
-    double Kr = 60000.0;     // Cornaring_Power_rear [N/rad]
     double Gy = 0.0;         // Side_G [G]
     double Vx = 0.0;         // Velocity_X [m/s]
     double Vy = 0.0;         // Velocity_Y [m/s]
@@ -141,11 +135,11 @@ public :
                  double Br_in,
                  double Cr_in,
                  double Dr_in,
-                 double dt_in) {
+                 double delta_time) {
         SetControllData(handle_angle_rad, velocity_mps);
         SetVehicleData(mass_kg, length_front_m, length_rear_m, inertia_yaw_moment);
         SetTireData(Bf_in, Cf_in, Df_in, Br_in, Cr_in, Dr_in);
-        SetStep(dt_in);
+        SetStep(delta_time);
     }
     int SetSteer(double handle_angle_rad) {
         delta = handle_angle_rad;
@@ -176,8 +170,8 @@ public :
         dr = Dr_in;
         return 0;
     }
-    int SetStep(double dt_in) {
-        dt = dt_in;
+    int SetStep(double delta_time) {
+        dt = delta_time;
         return 0;
     }
 
