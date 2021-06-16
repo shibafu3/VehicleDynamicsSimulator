@@ -37,6 +37,23 @@ public :
     }
 };
 
+// https://www.vcssl.org/ja-jp/code/archive/0001/3200-integral-simpson/
+class Integrator {
+public :
+    double prev;
+    double dt;
+    Integrator() {}
+    Integrator(double initial_data, double delta_time) {
+        prev = initial_data;
+        dt = delta_time;
+    }
+    double Integral(double data) {
+        double inte = (prev + data) * dt * 0.5;
+        prev = data;
+        return inte;
+    }
+};
+
 class BicycleModel {
 
     //                      Z(UP)
@@ -89,9 +106,9 @@ protected :
         return 0;
     }
     int CalcBetaYaw() {
-        B += dB * dt;
-        dyaw += ddyaw * dt;
-        yaw += dyaw * dt;
+        B += IB.Integral(dB);
+        dyaw += IIYaw.Integral(ddyaw);
+        yaw += IYaw.Integral(dyaw);
         return 0;
     }
     int CalcBetafr() {
@@ -131,6 +148,9 @@ public :
     double Kr = 60000.0;     // Cornaring_Power_rear [N/rad]
 
     //Physical phenomenon
+    Integrator IB;
+    Integrator IYaw;
+    Integrator IIYaw;
     double B = 0.0;          // Vehicle_Slip_angle [rad]
     double dB = 0.0;         // Vehicle_Slip_angle_rate [rad/s]
     double Bf = 0.0;         // Front_Tire_Slip_angle [rad/s]
@@ -161,6 +181,7 @@ public :
         SetControllData(handle_angle_rad, velocity_mps);
         SetVehicleData(mass_kg, length_front_m, length_rear_m, inertia_yaw_moment);
         SetStep(delta_time);
+        SetIntegrator(0.0, 0.0, 0.0);
     }
     int SetSteer(double handle_angle_rad) {
         delta = handle_angle_rad;
@@ -185,6 +206,11 @@ public :
     int SetStep(double delta_time) {
         dt = delta_time;
         return 0;
+    }
+    int SetIntegrator(double init_B, double init_dyaw, double init_ddyaw) {
+        IB = Integrator(init_B, dt);
+        IYaw = Integrator(init_dyaw, dt);
+        IIYaw = Integrator(init_ddyaw, dt);
     }
 
     int Step() {
