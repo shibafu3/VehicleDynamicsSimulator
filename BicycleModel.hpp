@@ -80,13 +80,16 @@ protected :
         Wr = (m*lr) / (lf+lr);
         return 0;
     }
-    int CalcBeta() {
+    int CalcdBeta() {
         dB = a11()*B + a12()*dyaw + b1()*delta;
-        B += dB * dt;
         return 0;
     }
-    virtual int CalcYaw() {
+    virtual int CalcddYaw() {
         ddyaw = a21()*B + a22()*dyaw + b2()*delta;
+        return 0;
+    }
+    int CalcBetaYaw() {
+        B += dB * dt;
         dyaw += ddyaw * dt;
         yaw += dyaw * dt;
         return 0;
@@ -186,8 +189,9 @@ public :
 
     int Step() {
         CalcK();
-        CalcBeta();
-        CalcYaw();
+        CalcdBeta();
+        CalcddYaw();
+        CalcBetaYaw();
         CalcBetafr();
         CalcGy();
         CalcV();
