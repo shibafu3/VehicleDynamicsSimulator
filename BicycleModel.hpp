@@ -1,6 +1,6 @@
-#define _USE_MATH_DEFINES
+#pragma once
 
-#include <math.h>
+#include <cmath>
 
 class BicycleModel {
 
@@ -50,7 +50,7 @@ protected :
         B += dB * dt;
         return 0;
     }
-    int CalcYaw() {
+    virtual int CalcYaw() {
         ddyaw = a21()*B + a22()*dyaw + b2()*delta;
         dyaw += ddyaw * dt;
         yaw += dyaw * dt;
@@ -144,7 +144,6 @@ public :
         I = inertia_yaw_moment;
         return 0;
     }
-
     int SetStep(double delta_time) {
         dt = delta_time;
         return 0;
