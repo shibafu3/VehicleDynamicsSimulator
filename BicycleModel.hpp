@@ -241,3 +241,22 @@ public :
     }
 
 };
+
+// http://akiracing.com/2018/01/23/arduino_rc_filter/
+class FirstOrderLag {
+public :
+    double t;
+    double data;
+    double dt;
+    double a;
+    FirstOrderLag() {}
+    FirstOrderLag(double time_constant, double initial_data, double sampling_time) {
+        t = time_constant;
+        data = initial_data;
+        dt = sampling_time;
+        a = t / (t + dt);
+    }
+    double Input(double input) {
+        return data = (1.0 - a)*input + a*data;
+    }
+};
