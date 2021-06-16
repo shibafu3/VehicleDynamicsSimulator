@@ -2,6 +2,41 @@
 
 #include <cmath>
 
+// http://akiracing.com/2018/01/23/arduino_rc_filter/
+class FirstOrderLag {
+public :
+    double t;
+    double data;
+    double dt;
+    double a;
+    FirstOrderLag() {}
+    FirstOrderLag(double time_constant, double initial_data, double sampling_time) {
+        t = time_constant;
+        data = initial_data;
+        dt = sampling_time;
+        a = t / (t + dt);
+    }
+    double Input(double input) {
+        return data = (1.0 - a)*input + a*data;
+    }
+};
+
+class Differentiator {
+public :
+    double prev;
+    double dt;
+    Differentiator() {}
+    Differentiator(double initial_data, double delta_time) {
+        prev = initial_data;
+        dt = delta_time;
+    }
+    double Diff(double data) {
+        double diff = (data - prev) / dt;
+        prev = data;
+        return diff;
+    }
+};
+
 class BicycleModel {
 
     //                      Z(UP)
@@ -239,23 +274,4 @@ public :
         return 0;
     }
 
-};
-
-// http://akiracing.com/2018/01/23/arduino_rc_filter/
-class FirstOrderLag {
-public :
-    double t;
-    double data;
-    double dt;
-    double a;
-    FirstOrderLag() {}
-    FirstOrderLag(double time_constant, double initial_data, double sampling_time) {
-        t = time_constant;
-        data = initial_data;
-        dt = sampling_time;
-        a = t / (t + dt);
-    }
-    double Input(double input) {
-        return data = (1.0 - a)*input + a*data;
-    }
 };
