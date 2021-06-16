@@ -38,20 +38,32 @@ void plot(vector<double> time, vector<double> delta, vector<double> dyaw, vector
 
 int main() {
     double dt = 0.001;
-    BicycleModel car1(0.0,       // Input_Tire_Angle [rad]
-                      140 / 3.6, // Velocity [m/s]
-                      1500,      // Vehicle_Mass [kg]
-                      1.1,       // [m]
-                      1.6,       // [m]
-                      2500.0,    // Inertia [kg*m^2]
-                      0.2,       // Magic_Fomula_front_B []
-                      1.5,       // Magic_Fomula_front_C []
-                      270,       // Magic_Fomula_front_D []
-                      0.31,      // Magic_Fomula_rear_B []
-                      1.28,      // Magic_Fomula_rear_C []
-                      252.0,     // Magic_Fomula_rear_D []
-                      dt
-                 );
+    BicycleModelWithCorneringPower car1(
+        0.0,       // Input_Tire_Angle [rad]
+        140 / 3.6, // Velocity [m/s]
+        1500,      // Vehicle_Mass [kg]
+        1.1,       // [m]
+        1.6,       // [m]
+        2500.0,    // Inertia [kg*m^2]
+        55000,
+        60000,
+        dt
+    );
+    BicycleModelWithMagicFomula car2(
+        0.0,       // Input_Tire_Angle [rad]
+        140 / 3.6, // Velocity [m/s]
+        1500,      // Vehicle_Mass [kg]
+        1.1,       // [m]
+        1.6,       // [m]
+        2500.0,    // Inertia [kg*m^2]
+        0.2,
+        1.5,
+        376.0,
+        0.31,
+        1.28,
+        252.0,
+        dt
+    );
 
     ofstream ofs("./plot_data.csv");
     vector<double> x;

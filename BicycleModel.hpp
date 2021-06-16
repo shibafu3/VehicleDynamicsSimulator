@@ -61,11 +61,7 @@ protected :
         Br = B - lr*dyaw/V;
         return 0;
     }
-    virtual int CalcK() {
-        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * g * 2;
-        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * g * 2;
-        return 0;
-    }
+    virtual int CalcK() = 0;
     int CalcGy() {
         Gy = V * (dB + dyaw) / g;
         return 0;
@@ -91,12 +87,6 @@ public :
     double lf = 1.1;         // [m]
     double lr = 1.6;         // [m]
     double I = 2500;         // Inertia [kg*m^2]
-    double bf = 0.2;         // Magic_Fomula_front_B []
-    double cf = 1.5;         // Magic_Fomula_front_C []
-    double df = 376.0;       // Magic_Fomula_front_D []
-    double br = 0.31;        // Magic_Fomula_rear_B []
-    double cr = 1.28;        // Magic_Fomula_rear_C []
-    double dr = 252.0;       // Magic_Fomula_rear_D []
     double Wf = 0.0;         // Front_tire_mass [kg]
     double Wr = 0.0;         // Front_tire_mass [kg]
     double Kf = 55000.0;     // Cornaring_Power_front [N/rad]
@@ -121,7 +111,7 @@ public :
     double x = 0.0;          // Position_X [m]
     double y = 0.0;          // Position_Y [m]
 
-    double dt = 0.01;
+    double dt = 0.01;        // Sampling time [s]
 
     BicycleModel(double handle_angle_rad,
                  double velocity_mps,
@@ -129,16 +119,9 @@ public :
                  double length_front_m,
                  double length_rear_m,
                  double inertia_yaw_moment,
-                 double Bf_in,
-                 double Cf_in,
-                 double Df_in,
-                 double Br_in,
-                 double Cr_in,
-                 double Dr_in,
                  double delta_time) {
         SetControllData(handle_angle_rad, velocity_mps);
         SetVehicleData(mass_kg, length_front_m, length_rear_m, inertia_yaw_moment);
-        SetTireData(Bf_in, Cf_in, Df_in, Br_in, Cr_in, Dr_in);
         SetStep(delta_time);
     }
     int SetSteer(double handle_angle_rad) {
@@ -161,21 +144,14 @@ public :
         I = inertia_yaw_moment;
         return 0;
     }
-    int SetTireData(double Bf_in, double Cf_in, double Df_in, double Br_in, double Cr_in, double Dr_in) {
-        bf = Bf_in;
-        cf = Cf_in;
-        df = Df_in;
-        br = Br_in;
-        cr = Cr_in;
-        dr = Dr_in;
-        return 0;
-    }
+
     int SetStep(double delta_time) {
         dt = delta_time;
         return 0;
     }
 
     int Step() {
+        CalcK();
         CalcBeta();
         CalcYaw();
         CalcBetafr();
@@ -190,4 +166,78 @@ public :
         }
         return 0;
     }
+};
+
+class BicycleModelWithCorneringPower : public BicycleModel {
+public :
+    BicycleModelWithCorneringPower(double handle_angle_rad,
+                                   double velocity_mps,
+                                   double mass_kg,
+                                   double length_front_m,
+                                   double length_rear_m,
+                                   double inertia_yaw_moment,
+                                   double cornering_power_front,
+                                   double cornering_power_rear,
+                                   double delta_time) :
+                                   BicycleModel(handle_angle_rad,
+                                                velocity_mps,
+                                                mass_kg,
+                                                length_front_m,
+                                                length_rear_m,
+                                                inertia_yaw_moment,
+                                                delta_time) {
+        Kf = cornering_power_front;
+        Kr = cornering_power_rear;
+    }
+    int CalcK() override {
+        return 0;
+    }
+};
+
+class BicycleModelWithMagicFomula : public BicycleModel {
+protected :
+    double bf = 0.2;         // Magic_Fomula_front_B []
+    double cf = 1.5;         // Magic_Fomula_front_C []
+    double df = 376.0;       // Magic_Fomula_front_D []
+    double br = 0.31;        // Magic_Fomula_rear_B []
+    double cr = 1.28;        // Magic_Fomula_rear_C []
+    double dr = 252.0;       // Magic_Fomula_rear_D []
+    int SetTireData(double Bf_in, double Cf_in, double Df_in, double Br_in, double Cr_in, double Dr_in) {
+        bf = Bf_in;
+        cf = Cf_in;
+        df = Df_in;
+        br = Br_in;
+        cr = Cr_in;
+        dr = Dr_in;
+        return 0;
+    }
+public :
+    BicycleModelWithMagicFomula(double handle_angle_rad,
+                                   double velocity_mps,
+                                   double mass_kg,
+                                   double length_front_m,
+                                   double length_rear_m,
+                                   double inertia_yaw_moment,
+                                   double Bf_in,
+                                   double Cf_in,
+                                   double Df_in,
+                                   double Br_in,
+                                   double Cr_in,
+                                   double Dr_in,
+                                   double delta_time) :
+                                   BicycleModel(handle_angle_rad,
+                                                velocity_mps,
+                                                mass_kg,
+                                                length_front_m,
+                                                length_rear_m,
+                                                inertia_yaw_moment,
+                                                delta_time) {
+        SetTireData(Bf_in, Cf_in, Df_in, Br_in, Cr_in, Dr_in);
+    }
+    int CalcK() override {
+        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * KGF2N * 2;
+        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * KGF2N * 2;
+        return 0;
+    }
+
 };
