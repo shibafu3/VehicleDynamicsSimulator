@@ -75,44 +75,49 @@ protected :
         return 2*lf*Kf/I;
     }
 
-    int CalcWeight() {
-        Wf = (m*lf) / (lf+lr);
-        Wr = (m*lr) / (lf+lr);
-        return 0;
+    double CalcWeightf() {
+        return (m*lf) / (lf+lr);;
     }
-    int CalcdBeta() {
-        dB = a11()*B + a12()*dyaw + b1()*delta;
-        return 0;
+    double CalcWeightr() {
+        return (m*lr) / (lf+lr);;
     }
-    virtual int CalcddYaw() {
-        ddyaw = a21()*B + a22()*dyaw + b2()*delta;
-        return 0;
+    double CalcdBeta() {
+        return a11()*B + a12()*dyaw + b1()*delta;
     }
-    int CalcBetaYaw() {
-        B += dB * dt;
-        dyaw += ddyaw * dt;
-        yaw += dyaw * dt;
-        return 0;
+    virtual double CalcddYaw() {
+        return a21()*B + a22()*dyaw + b2()*delta;
     }
-    int CalcBetafr() {
-        Bf = B + lf*dyaw/V - delta;
-        Br = B - lr*dyaw/V;
-        return 0;
+    double CalcBeta() {
+        return B + dB * dt;
     }
-    virtual int CalcK() = 0;
-    int CalcGy() {
-        Gy = V * (dB + dyaw) / g;
-        return 0;
+    double CalcdYaw() {
+        return dyaw + ddyaw * dt;
     }
-    int CalcV() {
-        Vx = V * cos(B);
-        Vy = V * sin(B);
-        return 0;
+    double CalcYaw() {
+        return yaw + dyaw * dt;
     }
-    int CalcXY() {
-        x += (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * dt;
-        y += (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * dt;
-        return 0;
+    double CalcBetaf() {
+        return B + lf*dyaw/V - delta;
+    }
+    double CalcBetar() {
+        return B - lr*dyaw/V;
+    }
+    virtual double CalcKf() = 0;
+    virtual double CalcKr() = 0;
+    double CalcGy() {
+        return V * (dB + dyaw) / g;
+    }
+    double CalcVx() {
+        return V * cos(B);
+    }
+    double CalcVy() {
+        return V * sin(B);
+    }
+    double CalcX() {
+        return x + (Vx * cos(yaw) + Vy * cos(yaw + M_PI_2)) * dt;
+    }
+    double CalcY() {
+        return y + (Vx * sin(yaw) + Vy * sin(yaw + M_PI_2)) * dt;
     }
 
 public :
@@ -188,14 +193,20 @@ public :
     }
 
     int Step() {
-        CalcK();
-        CalcdBeta();
-        CalcddYaw();
-        CalcBetaYaw();
-        CalcBetafr();
-        CalcGy();
-        CalcV();
-        CalcXY();
+        Kf = CalcKf();
+        Kr = CalcKr();
+        dB = CalcdBeta();
+        ddyaw = CalcddYaw();
+        B = CalcBeta();
+        dyaw = CalcdYaw();
+        yaw = CalcYaw();
+        Bf = CalcBetaf();
+        Br = CalcBetar();
+        Gy = CalcGy();
+        Vx = CalcVx();
+        Vy = CalcVy();
+        x = CalcX();
+        y = CalcY();
         return 0;
     }
     int Step(int step_count) {
@@ -227,8 +238,11 @@ public :
         Kf = cornering_power_front;
         Kr = cornering_power_rear;
     }
-    int CalcK() override {
-        return 0;
+    double CalcKf() override {
+        return Kf;
+    }
+    double CalcKr() override {
+        return Kr;
     }
 };
 
@@ -272,10 +286,11 @@ public :
                                                 delta_time) {
         SetTireData(Bf_in, Cf_in, Df_in, Br_in, Cr_in, Dr_in);
     }
-    int CalcK() override {
-        Kf = (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1)) * KGF2N * 2;
-        Kr = (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1)) * KGF2N * 2;
-        return 0;
+    double CalcKf() override {
+        return (bf*cf*df*cos(cf*atan(bf*Bf*180.0 / M_PI)) / (atan(bf*Bf*180.0 / M_PI)*atan(bf*Bf*180.0 / M_PI) + 1.0)) * KGF2N * 2.0;
+    }
+    double CalcKr() override {
+        return (br*cr*dr*cos(cr*atan(br*Br*180.0 / M_PI)) / (atan(br*Br*180.0 / M_PI)*atan(br*Br*180.0 / M_PI) + 1.0)) * KGF2N * 2.0;
     }
 
 };
